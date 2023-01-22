@@ -15,7 +15,7 @@ use-default-preprocessors = true
 extra-watch-dirs = []
 
 [output.html]
-default-theme = "Rust"
+default-theme = "Light"
 mathjax-support = true
 git-repository-url = "https://github.com/jerok-kim/jerok-kim.github.io"
 git-repository-icon = "fa-github"
