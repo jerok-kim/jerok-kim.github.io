@@ -1,0 +1,44 @@
+[book]
+title = "Temporary blog: 개발자 꿈나무"
+authors = ["jerok-kim"]
+language = "kr"
+multilingual = true
+src = "src"
+
+[rust]
+edition = "2021"
+
+[build]
+build-dir = "docs"
+create-missing = true
+use-default-preprocessors = true
+extra-watch-dirs = []
+
+[output.html]
+default-theme = "Rust"
+mathjax-support = true
+git-repository-url = "https://github.com/jerok-kim/jerok-kim.github.io"
+git-repository-icon = "fa-github"
+
+[output.html.playground]
+editable = true
+copyable = true
+line-numbers = true
+runnable = true
+
+[output.wordcount]
+
+[output.html.fold]
+enable = true
+level = 5
+
+[output.html.search]
+enable = true
+limit-results = 30
+teaser-word-count = 30
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 1
+boost-paragraph = 1
+expand = true
+heading-split-level = 3
