@@ -26,8 +26,6 @@ copyable = true
 line-numbers = true
 runnable = true
 
-[output.wordcount]
-
 [output.html.fold]
 enable = true
 level = 5
