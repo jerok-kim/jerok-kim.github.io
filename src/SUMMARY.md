@@ -6,8 +6,6 @@
 
 # 토막글
 
----
-
 - [Rust](./rust.md)
   - [소유권 시스템](./rust_ownership.md) 
   - [빌림과 참조](./rust_borrowing.md)
