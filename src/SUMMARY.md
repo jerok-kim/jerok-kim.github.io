@@ -13,7 +13,6 @@
 
 ---
 
-- [Java](./java.md)
-  - [JVM](./jvm.md)
+
 
 ---
