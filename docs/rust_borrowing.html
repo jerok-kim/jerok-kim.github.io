@@ -146,7 +146,283 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="빌림과-참조"><a class="header" href="#빌림과-참조">빌림과 참조</a></h1>
+                        <p>#패스트캠퍼스, #국비지원교육, #메가바이트스쿨, #MegabyteSchool, #개발자취업부트캠프, #내일배움카드</p>
+<p><em>last edited 2023.01.26</em></p>
+<h1 id="빌림과-참조에-대해-쉬운-설명으로-알아보자"><a class="header" href="#빌림과-참조에-대해-쉬운-설명으로-알아보자">빌림과 참조에 대해 쉬운 설명으로 알아보자</a></h1>
+<blockquote>
+<p>▶ 만들면서 배우는 러스트 프로그래밍 -쿠지라 히코우즈쿠에- ◀ 을 참조하여 정리하였다.</p>
+</blockquote>
+<p>소유권은 함수를 호출해도 이동한다. 하지만 함수를 호출할 때마다 소유권이 이동하면 프로그래밍이 어려워진다. 그래서 일시적으로 소유권을 빌리는 '빌림'에 대해 알아보자. 빌림 외에도 함수와 소유권의 관계, 참조에
+대해서도 알아본다.</p>
+<h2 id="빌림이란"><a class="header" href="#빌림이란">'빌림'이란</a></h2>
+<p>'빌림'은 빌려쓴다는 뜻이다. 실생활에서도 자기 것이 아닌 물건을 원 주인의 양해를 받고 가져와 쓰는 것을 빌린다고 한다.</p>
+<p>러스트에서 말하는 빌림(borrow/borrowing)도 의미는 같지만 여기서는 물건이 아니라 값의 소유권이다. 그리고 빌리는 것이므로 소유권을 완전히 받는 것이 아니라 일시적으로 가져오고 사용이 끝나면 반납한다.</p>
+<h2 id="함수-호출로-이동하는-소유권"><a class="header" href="#함수-호출로-이동하는-소유권">함수 호출로 이동하는 소유권</a></h2>
+<p>소유권은 값 대입 외 함수 호출로도 이동한다. 함수를 호출할 때 인수로 값을 지정하면 그 값의 소유권은 호출한 함수의 인수로 이동한다.</p>
+<p>함수 호출에 따른 소유권 이동에 대해 자세히 살펴보자.</p>
+<pre><code class="language-rust  noplayground">fn main() {
+    let g1 = String::from(&quot;실수할 줄 아는 사람이 아름답다.&quot;);
+    show_message(g1);  // 소유권이 이동한다
+    println!(&quot;{}&quot;, g1);  // g1은 사용할 수 없다.
+}
+
+fn show_message(message: String) {
+    println!(&quot;{}&quot;, message);
+}</code></pre>
+<p>이 프로그램을 컴파일하면 다음과 같이 에러가 발생한다.</p>
+<pre><code class="language-text">$ rustc owner_func_err.rs
+error[E0382]: borrow of moved value: `g1`
+ --&gt; owner_func_err.rs:4:20
+  |
+2 |     let g1 = String::from(&quot;실수할 줄 아는 사람이 아름답다&quot;);
+  |         -- move occurs because `g1` has type `String`, which does not implement the `Copy` trait       
+3 |     show_message(g1);  // 소유권이 이동한다
+  |                  -- value moved here
+4 |     println!(&quot;{}&quot;, g1);  // g1은 사용할 수 없다
+  |                    ^^ value borrowed here after move
+  |
+  = note: this error originates in the macro `$crate::format_args_nl` which comes from the expansion of the macro `println` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0382`.
+</code></pre>
+<p>에러 메시지를 확인해보자. 직접적인 에러는 'error[E0382]: borrow of moved value: <code>g1</code>(이동된 값 g1을 빌림)'이다.</p>
+<p>여기서 주목할 점은 어디에서 <code>g1</code>의 값이 이동했는지다. 프로그램의 3번째 줄에서 호출한 함수 <code>show_message</code>의 인수 <code>g1</code>부분에 'value moved here(여기에서 값이 이동됨)'이라는 힌트가
+표시된다.</p>
+<p>즉 함수 호출로 소유권 이동이 발생했으므로 4번째 줄의 <code>println!</code>에서 <code>g1</code>의 값을 사용할 수 없게 된 것이다.</p>
+<h3 id="소유권-돌려주기"><a class="header" href="#소유권-돌려주기">소유권 돌려주기</a></h3>
+<p>앞의 예제에서는 변수 <code>g1</code>의 소유권이 이동했으므로 에러가 발생했다. 이번에는 <code>g1</code>을 이용하면 함수를 호출한 곳에 소유권을 돌려주도록 해보자.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">fn main() {
+    let mut g1 = String::from(&quot;실수할 줄 아는 사람이 아름답다.&quot;);
+    g1 = show_message(g1);  // (1)
+    println!(&quot;{}&quot;, g1);  // ok (2)
+}
+
+// String을 받아 String을 반환하는 함수
+fn show_message(message: String) -&gt; String {
+    println!(&quot;{}&quot;, message);
+    return message;
+}</code></pre></pre>
+<p>컴파일 후 실행해보면 '실수할 줄 아는 사람이 아름답다.'라는 문장이 2번 출력된다.</p>
+<p>소스 코드를 살펴보자. (1)에서는 변수 <code>g1</code>의 값을 인수로 지정해 함수를 호출한다. 이를 통해 <code>g1</code>값의 소유권은 함수로 넘어간다. 하지만 함수의 반환 값을 통해 소유권을 다시 돌려받는다. 그래서 (2)
+에서도 <code>g1</code>을 이용할 수 있다.</p>
+<p>물컵의 예로 생각하면 <code>g1</code>컴에 따라둔 물을 <code>show_message</code>함수의 인수 <code>message</code>라는 컵으로 옮긴 후 다시 <code>g1</code>컵으로 옮긴 상태다.</p>
+<p>여기서 변수 <code>g1</code>을 선언할 때 <code>mut</code>을 붙여 가변 변수로 선언을 했다. 동일한 값인데 <code>mut</code>을 선언한 이유는 내부적으로 대입 동작이 발생하기 때문이다. 대입은 초기화와는 다른 동작이므로 값이 변하는 것으로
+간주되기 때문이다.</p>
+<p>(3)의 함수 <code>show_message</code>가 이전 예제와 다른 점은 인수 <code>message</code>를 그대로 반환 값으로 한 것이다. 이를 통해 함수를 호출했을 때 값 소유권을 함수의 변수 <code>message</code>로 이동한 뒤 실행이
+종료되면 다시 함수를 호출한 곳으로 돌려줄 수 있다.</p>
+<h3 id="참조와-빌림---함수-호출을-했을-때-소유권을-이동하지-않는-방법"><a class="header" href="#참조와-빌림---함수-호출을-했을-때-소유권을-이동하지-않는-방법">참조와 빌림 - 함수 호출을 했을 때 소유권을 이동하지 않는 방법</a></h3>
+<p>함수 호출만으로 값의 소유권이 이동하는 것은 불편할 때도 있다. 그래서 러스트에는 소유권을 일시적으로 빌려주는 '빌림(borrow)'이라는 시스템을 마련해두고 있다.</p>
+<p>값을 빌리기 위해서는 참조자를 나타내는 <code>&amp;</code>을 붙인다. 바꿔 말하면 <strong>함수의 인수를 '참조자'로 만드는 것을 '빌림'이라고 한다</strong>.</p>
+<p>앞에서 다룬 예제를 빌림을 이용하는 형태로 변경해보자.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">fn main() {
+    let g1 = String::from(&quot;실수할 줄 아는 사람이 아름답다.&quot;);
+    show_message(&amp;g1);  // 참조 값을 전달 (1)
+    println!(&quot;{}&quot;, g1);  // 소유권은 이동하지 않음 (2)
+}
+
+fn show_message(message: &amp;String) {  // (3)
+    println!(&quot;{}&quot;, message);
+}</code></pre></pre>
+<p>컴파일 후 실행해보면 앞서와 마찬가지로 <code>show_message</code>에서 한 번, <code>println!</code>에서 한 번씩 메시지가 출력되어 총 2개의 메시지가 출력된다.</p>
+<p>가장 앞 부분에서 설명한 에러가 발생하는 소스 코드와 비교해보면 차이점은 단 2글자뿐이다. (1)에서 함수를 호출할 때 참조자라는 것을 명시하기 위해 <code>&amp;</code>를 붙인 것, 그리고 (3)에서 함수의 인자로 참조자를
+전달한다는 것을 명시하기 위해 역시 <code>&amp;</code>을 붙인 것이 전부다. 이를 통해 (2)에서 변수 <code>g1</code>의 값을 이용할 수 있다.</p>
+<p>이처럼 참조자를 전달하도록 변경하면 소유권 문제를 해결할 수 있다. <strong>값을 참조해서 사용한다는 것은 값의 소유권을 일시적으로 빌리는 '빌림'이기 때문이다</strong>.</p>
+<blockquote>
+<h4 id="string은-str과-다른가"><a class="header" href="#string은-str과-다른가">&amp;String은 &amp;str과 다른가</a></h4>
+<p>앞의 프로그램에서는 <code>String</code> 타입의 참조 타입인 <code>&amp;String</code>을 썼다. 하지만 문자열 참조 타입으로 <code>&amp;str</code>을 이용할 수도 있다. 러스트의 많은 함수는 문자열 참조 타입으로 <code>&amp;str</code>을
+이용한다. <code>&amp;String</code>과 <code>&amp;str</code>은 대부분의 경우 동일하게 사용할 수 있다. 하지만 엄밀히 말하면 <code>&amp;str</code>은 슬라이스다. 슬라이스는 배열과 같은 요소의 일부를 참조하기 위한 타입이다. 자세한 내용은
+문자열에 대해 알아볼때 다뤄보자.</p>
+</blockquote>
+<h2 id="참조자를-반환하는-함수"><a class="header" href="#참조자를-반환하는-함수">참조자를 반환하는 함수</a></h2>
+<p>함수에서 참조자를 반환해야 하는 경우도 있다. 예를 들어 함수 안에서 어떠한 데이터를 만들고, 값이 아니라 그 참조자를 반환해야 하는 경우다. 그런데 러스트에서는 값에 수명(Lifetime)이 있다.</p>
+<p>다음 소스 코드는 함수 <code>gen_message</code>로 메시지를 만든 뒤 그 참조자를 반환하려는 의도로 만들어진 것이다. 하지만 에러가 발생한다. 어떤 부분이 잘못되었는지 살펴보자.</p>
+<pre><code class="language-rust  noplayground">// 메시지를 생성한 뒤 그 참조자를 반환하는 함수
+fn gen_message() -&gt; &amp;str {
+    let msg = String::from(&quot;실수할 줄 아는 사람이 아름답다.&quot;);
+    return &amp;msg;
+}
+
+fn main() {
+    let m = gen_message();
+    println!(&quot;{}&quot;, m);
+}</code></pre>
+<pre><code class="language-text">$ rustc owner_lifetime_err.rs 
+error[E0106]: missing lifetime specifier
+ --&gt; owner_lifetime_err.rs:2:21
+  |
+2 | fn gen_message() -&gt; &amp;str {
+  |                     ^ expected named lifetime parameter
+  |
+  = help: this function's return type contains a borrowed value, but there is no value for it to be borrowed from
+help: consider using the `'static` lifetime
+  |
+2 | fn gen_message() -&gt; &amp;'static str {
+  |                      +++++++
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0106`.
+</code></pre>
+<p>에러 메시지를 확인해보자. 'error[E0106]: missing lifetime specifier(수명 지시자가 없음)'이라고 표시된다. 도움말(help)을 보면 'this function's return
+type contains a borrowed value, but there is no value for it to be borrowed from(이 함수가 반환하는 값은 빌린 값을 포함하고 있으나 빌림 값이 존재하지
+않음)'이라고 표시된다.</p>
+<p>즉, 수명을 지정하지 않았기 때문에 에러가 발생한 것이다.</p>
+<p>앞에서 '소유자'가 유효한 범위(Scope)를 벗어나면 값은 파기된다'는 소유권 시스템의 기본 원칙을 바탕으로 생각해보자. 함수 <code>gen_message</code>는 하나의 범위다. 변수 <code>msg</code>는 <strong>이 범위 안에서만
+유효하며 범위를 벗어나는 순간 <code>msg</code>값은 파기되는 것이다</strong>. 따라서 <code>msg</code>의 값에 대한 참조를 반환하더라도 <code>msg</code>값은 파기되므로 값이 사라지기 때문에 에러가 발생한다.</p>
+<p>그렇다면 이 소스 코드를 어떻게 고쳐야 할까? <strong>참조가 안 된다면 실제값을 이용하면 된다</strong>. 즉 참조가 아닌 <code>String</code>객체의 실제값을 반환하도록 수정한다.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">// 메시지 생성 함수
+fn gen_message() -&gt; String {
+    let msg = String::from(&quot;실수할 줄 아는 사람이 아름답다.&quot;);
+    return msg;  // 소유권이 함수의 반환 값으로 이동 (1)
+}
+
+fn main() {
+    let m = gen_message();  // 소유권은 m으로 이동 (2)
+    println!(&quot;{}&quot;, m);  // ok
+}</code></pre></pre>
+<p>(1)부분에서 변수 <code>msg</code>값의 소유권은 함수의 반환 값으로 이동한다. 즉, (2)부분의 변수 <code>m</code>이 <code>msg</code>값의 소유권을 가지게 된다. 따라서 <code>println!</code> 매크로로 <code>m</code>의 값을 출력할 수 있다.</p>
+<h2 id="가변-참조자를-인수로-사용하기"><a class="header" href="#가변-참조자를-인수로-사용하기">가변 참조자를 인수로 사용하기</a></h2>
+<p>함수 호출에 참조자를 사용할 때 함수 안에서 인수의 값을 변경해야 하는 경우도 있다. 이때는 참조자가 가변이라는 것을 명시하면 함수 안에서 인수의 값을 변경할 수 있다.</p>
+<p>다음은 인수에 지정한 <code>String</code> 타입 값을 함수 안에서 변경하는 프로그램이다.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">// 인수의 문자열을 변경하는 함수 (1)
+fn add_quote(msg: &amp;mut String) {
+    msg.insert(0, '&quot;');
+    msg.push('&quot;');
+}
+
+fn main() {
+    let mut msg = String::from(&quot;건강한 신체에 건강한 정신이 깃든다.&quot;);
+    println!(&quot;{}&quot;, msg);  // (2)
+    add_quote(&amp;mut msg);  // (3)
+    println!(&quot;{}&quot;, msg);  // (4)
+}</code></pre></pre>
+<p>컴파일 후 실행해보면 문자열의 앞뒤에 큰따옴표가 추가된 것을 확인할 수 있다.</p>
+<p>함수의 인수로 지정한 값의 참조자를 변경하려면 (1)의 함수 정의에서 인수를 <code>&amp;mut</code> 타입 형태로 지정한다. 이렇게 하면 그 타입이 가변 참조자가 된다. 그리고 (3)에서와 같이 함수를 호출할 때 <code>&amp;mut</code>을
+지정해 함수를 호출한다.</p>
+<p><code>main</code>함수를 보면 <code>String</code>타입 값을 만들고 가변 변수 <code>msg</code>에 대입한다. 그리고 (2)에서 내용을 출력한다. (3)에서는 <code>add_quote</code>함수를 호출한다. 호출할 때 인수에 <code>&amp;mut</code>을 추가해
+가변 참조자라는 것을 명시한다. <code>add_quote</code>함수는 <code>msg</code>의 앞과 뒤에 큰따옴표를 추가한다. 그리고 (4)에서 큰따옴표가 추가된 문자열을 출력한다.</p>
+<p>여기서 주의할 것은 <code>add_quote</code>함수를 호출할 때 값 그 자체가 아니라 <code>mut</code>에 <code>&amp;</code>를 붙여 가변 참조자를 지정한다는 점이다. 참조자이므로 값을 빌리기만 하므로 (4)에서 <code>msg</code>를 이용할 수 있다.</p>
+<h3 id="함수를-호출해서-인수를-변경하는-방법"><a class="header" href="#함수를-호출해서-인수를-변경하는-방법">함수를 호출해서 인수를 변경하는 방법</a></h3>
+<p>함수의 인수로 지정한 변수를 변경하는 방법을 다시 한번 확인하자. 문법은 다음과 같다.</p>
+<pre><code class="language-rust  noplayground">// 함수 정의
+fn 함수이름(변수명: &amp;mut 타입) {
+    // 실제값을 얻음
+    let value = *변수명;
+    
+    // 변수를 갱신
+    *변수명 = 새로운 값;
+}
+
+// 함수 호출
+함수(&amp;mut 변수);</code></pre>
+<p>함수를 정의할 때 변수에 대한 참조자를 전달할 수 있게 <code>변수명: &amp;mut 타입</code>을 지정한다. 그리고 함수를 호출할 때는 <code>함수(&amp;mut 변수)</code>와 같이 변수가 가변이며 참조자라는 것을 명시한다.</p>
+<p>함수의 실제 내용에는 변수의 참조자로부터 실제값을 얻기 위해 <code>*변수명</code>과 같이 기술한다. 이것을 '역참조(dereference)'라고 한다. 값을 변경하는 경우에도 역참조를 지정해 <code>*변수명 = 새로운 값;</code>과
+같이 기술한다.</p>
+<h3 id="인수를-변경하는-예"><a class="header" href="#인수를-변경하는-예">인수를 변경하는 예</a></h3>
+<p>다음은 가변 변수를 선언한 뒤 함수를 이용해 원래의 변수값을 변경하는 간단한 예이다.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">// 인수의 값에 2를 곱해 반환하는 함수 (1)
+fn x2(arg: &amp;mut i32) {
+    *arg = *arg * 2;
+}
+
+fn main() {
+    let mut v = 16;
+    x2(&amp;mut v);  // 인수에 2가 곱해진다 (2)
+    println!(&quot;{}&quot;, v);
+}</code></pre></pre>
+<p>컴파일 후 실행해보면 원래 16이었던 <code>v</code>의 값이 2배가 되어 32가 출력된다.</p>
+<p>프로그램을 확인해보자. (1)은 인수로 전달된 값에 2를 곱하는 함수다. 여기서 중요한 점은 가변 참조자를 이용할 수 있도록 인수 타입 앞에 <code>&amp;mut</code>을 붙이는 것이다.</p>
+<p>(2)에서는 함수를 호출한다. 이 함수에 전달하는 인수는 가변 참조자여야 하기 때문에 <code>&amp;mut</code>을 붙인다.</p>
+<h3 id="참조-호출과-값-호출의-차이"><a class="header" href="#참조-호출과-값-호출의-차이">참조 호출과 값 호출의 차이</a></h3>
+<p>함수를 호출할 때 인수를 어떻게 전달하느냐에 따라 값 호출(Call by Value)와 참조 호출(Call by Reference)로 나뉜다. 러스트뿐 아니라 다른 일반적인 프로그래밍 언어에서도 이 두 가지 방법이
+사용된다.</p>
+<p>값 호출은 값 그 자체를 인수로 전달하는 것이며 참조 호출은 변수의 참조자를 사용하는 것이다.</p>
+<p>함수를 호출할 때 '값 전달'이 이루어지면 함수의 인수로 지정된 '값'이 그대로 전달되는 것이 아니라 값이 복사되어 함수로 전달된다. 그러므로 함수 안에서 그 값이 어떻게 가공이 되더라도 변수를 호출한 곳에서는
+아무런 영향을 받지 않는다. 즉 안전하다. 물론 함수의 인수로 변수를 지정했을 때도 전달되는 것은 변수가 아니라 변수 '값'의 사본이기 때문에 호출한 곳의 변수는 영향을 받지 않는다.</p>
+<p>반면 '참조 호출'은 참조자(변수가 가리키는 주소)가 전달된다. 이 경우 함수 안에서 인수의 내용을 변경하면 함수를 호출한 곳의 값도 바뀐다.</p>
+<p>러스트에서 참조 전달을 하는 경우 함수의 인수에 참조를 나타내는 <code>&amp;</code>를 지정한다. 러스트에서 값 전달을 하는 경우 소유권 시스템의 규칙이 적용된다. 즉 기본 타입(또는 <code>Copy</code>트레잇이 구현된 타입)이라면 값이
+복사되지만 그 외의 타입에서는 소유권이 이동한다.</p>
+<blockquote>
+<h4 id="println-매크로-사용-방법-정리"><a class="header" href="#println-매크로-사용-방법-정리">println! 매크로 사용 방법 정리</a></h4>
+<p><code>println!</code>은 표준 출력으로 임의의 서식을 가진 문자열을 출력하는 매크로다. 러스트 프로그래밍을 하는 데 있어 가장 자주 사용하는 기능 중 하나다. 여기서는 <code>println!</code>매크로 사용 방법을
+정리해본다.</p>
+<p><strong>소유권 문제가 발생하지 않는다.</strong></p>
+<p><code>println!</code>매크로는 소유권과 관련된 문제가 발생하지 않게 구현되어 있다. 다음은 <code>println!</code>을 모방해 <code>echo</code>함수를 만들어 사용하는 예이다. 하지만 이 함수는 소유권이 이동하기 때문에 에러가
+발생한다.</p>
+<pre><code class="language-rust  noplayground">fn main() {
+    let s = &quot;Fast and Robust&quot;.to_string();
+    echo(s);  // &lt;- 소유권이 이동한다.
+    println!(&quot;{}&quot;, s);
+}
+
+// println!을 모방한 함수
+fn echo(s: String) {
+    println!(&quot;{}&quot;, s);
+}</code></pre>
+<p>컴파일을 해보면 소유권과 관련된 에러가 발생한다. 하지만 <code>println!</code>매크로를 이용하면 문제가 없으며, 다음과 같이 몇 번이나 같은 값을 이용할 수 있다.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">fn main() {
+    let s = &quot;Fast and Robust&quot;.to_string();
+    println!(&quot;{}&quot;, s);  // 소유권이 이동하지 않는다.
+    println!(&quot;{}&quot;, s);
+}</code></pre></pre>
+<p><strong>값을 임의의 장소에 넣을 수 있다.</strong></p>
+<p>변수나 값을 문자열 안의 임의의 장소에 넣을 수 있다. 그리고 값을 순서대로 채워넣는 것이 아니라 <code>...{2}...{1}...{0}...</code>과 같이 순서를 임의로 지정할 수도 있다.</p>
+<p>예를 들어 연도 표시 방법은 나라에 따라 상이하다. 미국에서는 '월/일/년' 순으로 쓰지만 영국에서는 '일/월/년' 순으로 쓴다. 인수 순서는 변경하지 않고 서식만 변경해서 이런 문제에 대응할 수 있다.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">fn main() {
+    let year = 2023;
+    let month = 12;
+    let day = 1;
+    println!(&quot;KR:{0}/{1}/{2}&quot;, year, month, day);  // 한국
+    println!(&quot;US:{1}/{2}/{0}&quot;, year, month, day);  // 미국
+    println!(&quot;UK:{2}/{1}/{0}&quot;, year, month, day);  // 영국
+}</code></pre></pre>
+<p>그리고 다음과 같이 인수에 이름을 붙여서 대입하는 것도 가능하다.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">fn main() {
+    let year = 2023;
+    let month = 12;
+    let day = 1;
+    println!(&quot;{yy}년 {mm}월 {dd}일&quot;, dd = day, mm = month, yy = year);
+}</code></pre></pre>
+<p><strong>서식(format)을 지정할 수 있다.</strong></p>
+</blockquote>
+<div class="table-wrapper"><table><thead><tr><th>서식</th><th>설명</th><th>사용 예</th><th>입력</th><th>결과</th></tr></thead><tbody>
+<tr><td><code>{:&lt;n}</code></td><td>n자리 왼쪽 정렬</td><td><code>_{:&lt;5}_</code></td><td>30</td><td>_30   _</td></tr>
+<tr><td><code>{:&gt;n}</code></td><td>n자리 오른쪽 정렬</td><td><code>_{:&gt;5}_</code></td><td>30</td><td>_   30_</td></tr>
+<tr><td><code>{:^n}</code></td><td>n자리 가운데 정렬</td><td><code>_{:5}_</code></td><td>3</td><td>_  3  _</td></tr>
+<tr><td><code>{:0&lt;n}</code></td><td>n자리 왼쪽 정렬 후 0으로 채움</td><td><code>_{:0&lt;5}_</code></td><td>12</td><td><em>12000</em></td></tr>
+<tr><td><code>{:&gt;0n}</code></td><td>n자리 오른쪽 정렬 후 0으로 채움</td><td><code>_{:&gt;05}_</code></td><td>12</td><td><em>00012</em></td></tr>
+<tr><td><code>{:b}</code></td><td>2진수</td><td><code>{:b}</code></td><td>4</td><td>100</td></tr>
+<tr><td><code>{:0nb}</code></td><td>2진수에서 n만큼 0으로 채움</td><td><code>{:08b}</code></td><td>4</td><td>00000100</td></tr>
+<tr><td><code>{:o}</code></td><td>8진법</td><td><code>{:o}</code></td><td>438</td><td>666</td></tr>
+<tr><td><code>{:x}</code></td><td>16진수</td><td><code>{:x}</code></td><td>255</td><td>ff</td></tr>
+<tr><td><code>{:0nx}</code></td><td>16진수에서 n만큼 0으로 채움</td><td><code>{:04x}</code></td><td>15</td><td>000f</td></tr>
+<tr><td><code>{:.n}</code></td><td>소수점 이하 n자리 표시</td><td><code>{:.2}</code></td><td>3.1415</td><td>3.14</td></tr>
+<tr><td><code>{:e}</code></td><td>지수 표시</td><td><code>{:e}</code></td><td>12.34</td><td>1.234e1</td></tr>
+<tr><td><code>{:?}</code></td><td>디버그 출력</td><td><code>{:?}</code></td><td>[1,2,3]</td><td>[1, 2, 3]</td></tr>
+<tr><td><code>{:#?}</code></td><td>디버그 출력(형태 정렬)</td><td><code>{:#?}</code></td><td>[1,2]</td><td>[(줄바꿈) 1, (줄바꿈) 2, (줄바꿈)]</td></tr>
+<tr><td><code>{{</code></td><td>{를 출력</td><td><code>{{</code></td><td>없음</td><td>{</td></tr>
+<tr><td><code>}}</code></td><td>}를 출력</td><td><code>}}</code></td><td>없음</td><td>}</td></tr>
+<tr><td><code>{:p}</code></td><td>포인터</td><td><code>{:p}</code></td><td>abc</td><td>(예)0x1022c2970</td></tr>
+<tr><td><code>\&quot;</code></td><td>&quot;를 출력</td><td><code>\&quot;</code></td><td>없음</td><td>&quot;</td></tr>
+<tr><td><code>\\</code></td><td>\를 출력</td><td><code>\\</code></td><td>없음</td><td>\</td></tr>
+</tbody></table>
+</div>
+<blockquote>
+<p>서식을 이용해 보자.</p>
+<pre><pre class="playground"><code class="language-rust  editable edition2021">fn main() {
+    // 오른쪽 정렬 및 16진수 출력
+    println!(&quot;|{:&gt;8}| #{:06x}&quot;, &quot;red&quot;, 0xFF0000);
+    println!(&quot;|{:&gt;8}| #{:06x}&quot;, &quot;green&quot;, 0x00FF00);
+    println!(&quot;|{:&gt;8}| #{:06x}&quot;, &quot;blue&quot;, 0x0000FF);
+
+    // 디버그 출력
+    println!(&quot;|{:&gt;8}| RGB{:?}&quot;, &quot;yellow&quot;, (255, 255, 0));
+}</code></pre></pre>
+<p>이렇게 <code>println!</code>은 다양한 표현을 할 수 있으므로 활용도가 높다. <code>println!</code>은 표준 출력 용도이지만 문자열을 출력하지 않고 <code>String</code>타입으로 만들어 주는 <code>format!</code>매크로도
+있다. <code>format!</code>매크로 역시 <code>println!</code>매크로와 사용 방법은 동일하다. <code>format!</code>매크로 역시 활용도가 높으므로 사용법을 잘 익혀두자.</p>
+</blockquote>
 
                     </main>
 
