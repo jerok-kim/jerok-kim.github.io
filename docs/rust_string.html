@@ -146,7 +146,50 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="러스트의-문자열"><a class="header" href="#러스트의-문자열">러스트의 문자열</a></h1>
+                        <p>#패스트캠퍼스, #국비지원교육, #메가바이트스쿨, #MegabyteSchool, #개발자취업부트캠프, #내일배움카드</p>
+<p><em>last edited 2023.01.26</em></p>
+<h1 id="러스트의-문자열에-대해-쉬운-설명으로-알아보자"><a class="header" href="#러스트의-문자열에-대해-쉬운-설명으로-알아보자">러스트의 문자열에 대해 쉬운 설명으로 알아보자</a></h1>
+<p>러스트의 문자열인 <code>String</code>과 <code>&amp;str</code>이 어떻게 다른지 알아보자. 그리고 아시아 언어에서 주로 사용되는 멀티 바이트 문자는 어떻게 다뤄야 할지 확인해보자.</p>
+<h2 id="러스트의-문자열"><a class="header" href="#러스트의-문자열">러스트의 문자열</a></h2>
+<p>러스트에서 문자열을 다룰 때 <code>String</code> 타입 또는 <code>&amp;str</code>타입을 이용한다. 소스 코드에서 큰따옴표(<code>&quot;</code>)로 문자열을 감싸는 경우 문자열 리터럴 타입은 <code>&amp;str</code>이 된다.</p>
+<p><code>&amp;str</code>은 변경이 불가능하다. 그래서 값을 변경하거나 함수의 반환 값으로 사용해야 하는 경우에는 <code>String</code>타입을 사용한다.</p>
+<h3 id="string-타입은-벡터"><a class="header" href="#string-타입은-벡터">String 타입은 벡터</a></h3>
+<p><code>String</code>타입은 러스트 내부에서 <code>Vec&lt;u8&gt;</code>타입으로 취급된다. <code>Vec</code>은 가변 길이의 배열인 벡터 타입이다. 그리고 <code>u8</code>은 부호가 없는 8비트 정수, 즉 1바이트 정수다. 즉 <code>String</code>타입은 1바이트 단위로 데이터를 확장할 수 있다. 벡터 타입은 힙 메모리에 저장되므로 확장 가능한 문자열 객체이다.</p>
+<h3 id="str-타입은-슬라이스"><a class="header" href="#str-타입은-슬라이스">&amp;str 타입은 슬라이스</a></h3>
+<p>소스 코드에서 큰따옴표로 감싼 문자열이 <code>&amp;str</code>이다. <code>&amp;str</code>은 러스트 내부에서 슬라이스인 <code>&amp;[u8]</code>타입으로 취급된다. 슬라이스는 배열의 일부 또는 전체를 참조자로 이용할 수 있는 데이터 타입이다. 그리고 참조자이므로 소유권과 관련이 없다.</p>
+<h3 id="cc와의-차이점"><a class="header" href="#cc와의-차이점">C/C++와의 차이점</a></h3>
+<p>C 언어에서도 문자열은 1바이트 단위의 가변 배열 데이터로 취급한다. 하지만 러스트는 C 언어와 달리 문자열 끝에 <code>NULL</code>(<code>\0</code>)이 없다. 벡터 타입이므로 바이트 수가 기록되어 안전하게 관리된다.</p>
+<p><img src="./images/string_01.png" alt="러스트와 C 언어의 문자열 표현 차이" /></p>
+<ul>
+<li>C 언어에서는 문자열의 끝이 <code>NULL</code>(<code>\0</code>)이므로 문자열 크기를 알려주지 않으면 알 수 없음</li>
+<li>러스트에서는 처음부터 문자열의 실제 길이(length)와 메모리에 저장되는 크기(capacity)가 기록됨</li>
+</ul>
+<h2 id="러스트의-문자열은-utf-8"><a class="header" href="#러스트의-문자열은-utf-8">러스트의 문자열은 UTF-8</a></h2>
+<p>러스트에서 다루는 문자열은 <code>String</code> 타입이건 <code>&amp;str</code> 타입이건 문자 인코딩은 UTF-8로 정해져 있다. UTF-8은 Unicode/UCS로 정의된 문자 집합을 표현하는 문자 인코딩(부호화 방식/문자 코드)이다.</p>
+<p>UTF-8의 특징 중 하나는 1글자를 표시하기 위해 1바이트에서 6바이트 사이의 가변 길이를 이용한다는 점이다. 알파벳이나 숫자는 1바이트를 차지하지만 한글이나 일본어는 3바이트를 차지한다.<sup>*</sup></p>
+<p><sup>*</sup>유니코드로는 2바이트지만 UTF-8로 표현할 때 3바이트가 된다. 따라서 UTF-8 인코딩을 기본으로 사용하는 러스트에서는 인덱스보다 인덱스의 범위를 지정할 수 있는 슬라이스를 기본적으로 사용한다.</p>
+<p><code>String</code>이 <code>Vec&lt;u8&gt;</code>이고 <code>&amp;str</code>이 <code>&amp;[u8]</code>이므로 문자열에서 임의의 1바이트에 접근하는 것도 가능하다. 하지만 <strong>바이트 단위로 접근할 때에는 N바이트째가 N글자에 해당하지 않을 수 있다</strong>는 점도 기억해둬야 한다.</p>
+<p>영어 문자열과 바이트열이 대응하는 것을 확인해보자. 'Rust'라는 문자는 다음과 같이 대응된다. 바이트열은 16진수로 표기된다.</p>
+<ul>
+<li>'Rust'라는 문자열을 바이트로 표시</li>
+</ul>
+<div class="table-wrapper"><table><thead><tr><th>문자열</th><th>R</th><th>u</th><th>s</th><th>t</th></tr></thead><tbody>
+<tr><td>바이트열</td><td>52</td><td>75</td><td>73</td><td>74</td></tr>
+</tbody></table>
+</div>
+<p>영어와 숫자는 UTF-8과 ASCII 코드가 동일하다. 그리고 N바이트째 문자는 N번째 문자가 된다.</p>
+<p>다음은 '러스트'라는 UTF-8 문자열을 바이트로 표시한 것이다.</p>
+<ul>
+<li>'러스트'라는 문자열을 바이트로 표시</li>
+</ul>
+<div class="table-wrapper"><table><thead><tr><th>문자열</th><th>러</th><th>스</th><th>트</th></tr></thead><tbody>
+<tr><td>바이트열</td><td>eb 9f ac</td><td>ec 8a a4</td><td>ed 8a b8</td></tr>
+</tbody></table>
+</div>
+<p>'러'는 16진수 바이트로 표시하면 'eb 9f ac'의 3바이트, '스'는 'ec 8a a4'의 3바이트, '트'는 'ed 8a b8'의 3바이트다. 즉 문자열에서 2바이트째 값을 가져와도 '스'라는 문자에 해당하는 것이 아니라 '러'의 2바이트째인 '9f'라는 데이터를 가져오는 것이다.</p>
+<p>러스트의 문자열 <code>String</code>및 <code>&amp;str</code>에는 문자 단위로 데이터를 가져오는 <code>chars</code> 메서드와 바이트 단위로 데이터를 가져오는 <code>bytes</code> 메서드가 있다. 이 두 메서드의 차이점에 대해 알아보자.</p>
+<h3 id="문자열에서-문자-한-개씩-가져오기"><a class="header" href="#문자열에서-문자-한-개씩-가져오기">문자열에서 문자 한 개씩 가져오기</a></h3>
+<p>문자열을 하나 만든 뒤 임의의 곳에서 문자 한 개를 가져오는 프로그램을 만들어보자.</p>
 
                     </main>
 
